@@ -1,3 +1,6 @@
+//go:build e2e
+// +build e2e
+
 package e2e_test
 
 import (
@@ -26,6 +29,7 @@ var (
 	developCommitID      = "ac771f3b69cbd63b22bbda553f827ab36150c640"
 	developPullRequestID = "4"
 	developDateTime      = time.Date(2018, time.September, 25, 21, 00, 16, 0, time.UTC)
+	endpointURL          = "https://codeberg.org/"
 )
 
 func TestCheckE2E(t *testing.T) {
@@ -40,7 +44,7 @@ func TestCheckE2E(t *testing.T) {
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 			},
 			version: resource.Version{},
 			expected: resource.CheckResponse{
@@ -53,7 +57,7 @@ func TestCheckE2E(t *testing.T) {
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 			},
 			version: resource.Version{PR: latestPullRequestID, Commit: latestCommitID, CommittedDate: latestDateTime, State: gitea.StateOpen},
 			expected: resource.CheckResponse{
@@ -65,7 +69,7 @@ func TestCheckE2E(t *testing.T) {
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 			},
 			version: resource.Version{PR: targetPullRequestID, Commit: targetCommitID, CommittedDate: targetDateTime, State: gitea.StateOpen},
 			expected: resource.CheckResponse{
@@ -77,7 +81,7 @@ func TestCheckE2E(t *testing.T) {
 			source: resource.Source{
 				Repository:    "atte/e2e-test-repository",
 				AccessToken:   os.Getenv("GITEA_ACCESS_TOKEN"),
-				Endpoint:      "https://git.atte.cloud/",
+				Endpoint:      endpointURL,
 				BaseBranch:    "develop",
 				DisableCISkip: true,
 			},
@@ -91,7 +95,7 @@ func TestCheckE2E(t *testing.T) {
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				Labels:      []string{"enhancement"},
 			},
 			version: resource.Version{},
@@ -134,7 +138,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			description: "get and put works",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -145,10 +149,10 @@ func TestGetAndPutE2E(t *testing.T) {
 			getParameters:  resource.GetParameters{},
 			putParameters:  resource.PutParameters{},
 			versionString:  `{"pr":"2","commit":"a5114f6ab89f4b736655642a11e8d15ce363d882","committed":"0001-01-01T00:00:00Z","state":""}`,
-			metadataString: `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"https://git.atte.cloud/atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
+			metadataString: `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"` + endpointURL + `atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
 			metadataFiles: map[string]string{
 				"pr":        "2",
-				"url":       "https://git.atte.cloud/atte/e2e-test-repository/pulls/2",
+				"url":       endpointURL + "atte/e2e-test-repository/pulls/2",
 				"head_name": "my_second_pull",
 				"head_sha":  "a5114f6ab89f4b736655642a11e8d15ce363d882",
 				"base_name": "master",
@@ -163,7 +167,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			description: "get works when rebasing",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -176,7 +180,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			},
 			putParameters:       resource.PutParameters{},
 			versionString:       `{"pr":"2","commit":"a5114f6ab89f4b736655642a11e8d15ce363d882","committed":"0001-01-01T00:00:00Z","state":""}`,
-			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"https://git.atte.cloud/atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
+			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"` + endpointURL + `atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
 			expectedCommitCount: 9,
 			expectedCommits:     []string{"Push 2."},
 		},
@@ -184,7 +188,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			description: "get works when checkout",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -197,7 +201,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			},
 			putParameters:       resource.PutParameters{},
 			versionString:       `{"pr":"2","commit":"a5114f6ab89f4b736655642a11e8d15ce363d882","committed":"0001-01-01T00:00:00Z","state":""}`,
-			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"https://git.atte.cloud/atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
+			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"` + endpointURL + `atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
 			expectedCommitCount: 7,
 			expectedCommits: []string{
 				"Push 2.",
@@ -213,7 +217,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			description: "get works with non-master bases",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -224,7 +228,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			getParameters:       resource.GetParameters{},
 			putParameters:       resource.PutParameters{},
 			versionString:       `{"pr":"4","commit":"ac771f3b69cbd63b22bbda553f827ab36150c640","committed":"0001-01-01T00:00:00Z","state":""}`,
-			metadataString:      `[{"name":"pr","value":"4"},{"name":"title","value":"[skip ci] Add a PR with a non-master base"},{"name":"url","value":"https://git.atte.cloud/atte/e2e-test-repository/pulls/4"},{"name":"head_name","value":"test-develop-pr"},{"name":"head_sha","value":"ac771f3b69cbd63b22bbda553f827ab36150c640"},{"name":"base_name","value":"develop"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"[skip ci] Add a PR with a non-master base\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
+			metadataString:      `[{"name":"pr","value":"4"},{"name":"title","value":"[skip ci] Add a PR with a non-master base"},{"name":"url","value":"` + endpointURL + `atte/e2e-test-repository/pulls/4"},{"name":"head_name","value":"test-develop-pr"},{"name":"head_sha","value":"ac771f3b69cbd63b22bbda553f827ab36150c640"},{"name":"base_name","value":"develop"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"[skip ci] Add a PR with a non-master base\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
 			expectedCommitCount: 5,
 			expectedCommits:     []string{"[skip ci] Add a PR with a non-master base"}, // This merge ends up being fast-forwarded
 		},
@@ -232,7 +236,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			description: "get works with git_depth",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -243,7 +247,7 @@ func TestGetAndPutE2E(t *testing.T) {
 			getParameters:       resource.GetParameters{GitDepth: 6},
 			putParameters:       resource.PutParameters{},
 			versionString:       `{"pr":"2","commit":"a5114f6ab89f4b736655642a11e8d15ce363d882","committed":"0001-01-01T00:00:00Z","state":""}`,
-			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"https://git.atte.cloud/atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
+			metadataString:      `[{"name":"pr","value":"2"},{"name":"title","value":"Add comment from 2nd pull request."},{"name":"url","value":"` + endpointURL + `atte/e2e-test-repository/pulls/2"},{"name":"head_name","value":"my_second_pull"},{"name":"head_sha","value":"a5114f6ab89f4b736655642a11e8d15ce363d882"},{"name":"base_name","value":"master"},{"name":"base_sha","value":"93eeeedb8a16e6662062d1eca5655108977cc59a"},{"name":"message","value":"Push 2.\n"},{"name":"author","value":"itsdalmo"},{"name":"author_email","value":"kristian@doingit.no"},{"name":"state","value":"open"}]`,
 			expectedCommitCount: 9,
 			expectedCommits: []string{
 				"Merge commit 'a5114f6ab89f4b736655642a11e8d15ce363d882'",
@@ -324,7 +328,7 @@ func TestGetSubmodules(t *testing.T) {
 			description: "get works with submodules",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository-active",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{
@@ -347,7 +351,7 @@ func TestGetSubmodules(t *testing.T) {
 			description: "submodules are optional",
 			source: resource.Source{
 				Repository:  "atte/e2e-test-repository-active",
-				Endpoint:    "https://git.atte.cloud/",
+				Endpoint:    endpointURL,
 				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
 			},
 			version: resource.Version{

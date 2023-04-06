@@ -72,9 +72,9 @@ func (g *GitClient) Init(branch string) error {
 	if err := g.command("git", "config", "user.email", "concourse@local").Run(); err != nil {
 		return fmt.Errorf("failed to configure git email: %s", err)
 	}
-	if err := g.command("git", "config", "url.https://x-oauth-basic@git.atte.cloud/.insteadOf", "git@git.atte.cloud:").Run(); err != nil {
-		return fmt.Errorf("failed to configure gitea url: %s", err)
-	}
+	//if err := g.command("git", "config", "url.https://x-oauth-basic@git.atte.cloud/.insteadOf", "git@git.atte.cloud:").Run(); err != nil {
+	//	return fmt.Errorf("failed to configure gitea url: %s", err)
+	//}
 	if err := g.command("git", "config", "url.https://.insteadOf", "git://").Run(); err != nil {
 		return fmt.Errorf("failed to configure gitea url: %s", err)
 	}
