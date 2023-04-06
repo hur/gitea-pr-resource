@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	resource "github.com/telia-oss/github-pr-resource"
+	resource "github.com/hur/gitea-pr-resource"
 )
 
 type FakeGit struct {
@@ -33,17 +33,6 @@ type FakeGit struct {
 		result1 error
 	}
 	fetchReturnsOnCall map[int]struct {
-		result1 error
-	}
-	GitCryptUnlockStub        func(string) error
-	gitCryptUnlockMutex       sync.RWMutex
-	gitCryptUnlockArgsForCall []struct {
-		arg1 string
-	}
-	gitCryptUnlockReturns struct {
-		result1 error
-	}
-	gitCryptUnlockReturnsOnCall map[int]struct {
 		result1 error
 	}
 	InitStub        func(string) error
@@ -122,15 +111,16 @@ func (fake *FakeGit) Checkout(arg1 string, arg2 string, arg3 bool) error {
 		arg2 string
 		arg3 bool
 	}{arg1, arg2, arg3})
+	stub := fake.CheckoutStub
+	fakeReturns := fake.checkoutReturns
 	fake.recordInvocation("Checkout", []interface{}{arg1, arg2, arg3})
 	fake.checkoutMutex.Unlock()
-	if fake.CheckoutStub != nil {
-		return fake.CheckoutStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.checkoutReturns
 	return fakeReturns.result1
 }
 
@@ -185,15 +175,16 @@ func (fake *FakeGit) Fetch(arg1 string, arg2 int, arg3 int, arg4 bool) error {
 		arg3 int
 		arg4 bool
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.FetchStub
+	fakeReturns := fake.fetchReturns
 	fake.recordInvocation("Fetch", []interface{}{arg1, arg2, arg3, arg4})
 	fake.fetchMutex.Unlock()
-	if fake.FetchStub != nil {
-		return fake.FetchStub(arg1, arg2, arg3, arg4)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.fetchReturns
 	return fakeReturns.result1
 }
 
@@ -239,81 +230,22 @@ func (fake *FakeGit) FetchReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeGit) GitCryptUnlock(arg1 string) error {
-	fake.gitCryptUnlockMutex.Lock()
-	ret, specificReturn := fake.gitCryptUnlockReturnsOnCall[len(fake.gitCryptUnlockArgsForCall)]
-	fake.gitCryptUnlockArgsForCall = append(fake.gitCryptUnlockArgsForCall, struct {
-		arg1 string
-	}{arg1})
-	fake.recordInvocation("GitCryptUnlock", []interface{}{arg1})
-	fake.gitCryptUnlockMutex.Unlock()
-	if fake.GitCryptUnlockStub != nil {
-		return fake.GitCryptUnlockStub(arg1)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	fakeReturns := fake.gitCryptUnlockReturns
-	return fakeReturns.result1
-}
-
-func (fake *FakeGit) GitCryptUnlockCallCount() int {
-	fake.gitCryptUnlockMutex.RLock()
-	defer fake.gitCryptUnlockMutex.RUnlock()
-	return len(fake.gitCryptUnlockArgsForCall)
-}
-
-func (fake *FakeGit) GitCryptUnlockCalls(stub func(string) error) {
-	fake.gitCryptUnlockMutex.Lock()
-	defer fake.gitCryptUnlockMutex.Unlock()
-	fake.GitCryptUnlockStub = stub
-}
-
-func (fake *FakeGit) GitCryptUnlockArgsForCall(i int) string {
-	fake.gitCryptUnlockMutex.RLock()
-	defer fake.gitCryptUnlockMutex.RUnlock()
-	argsForCall := fake.gitCryptUnlockArgsForCall[i]
-	return argsForCall.arg1
-}
-
-func (fake *FakeGit) GitCryptUnlockReturns(result1 error) {
-	fake.gitCryptUnlockMutex.Lock()
-	defer fake.gitCryptUnlockMutex.Unlock()
-	fake.GitCryptUnlockStub = nil
-	fake.gitCryptUnlockReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeGit) GitCryptUnlockReturnsOnCall(i int, result1 error) {
-	fake.gitCryptUnlockMutex.Lock()
-	defer fake.gitCryptUnlockMutex.Unlock()
-	fake.GitCryptUnlockStub = nil
-	if fake.gitCryptUnlockReturnsOnCall == nil {
-		fake.gitCryptUnlockReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.gitCryptUnlockReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeGit) Init(arg1 string) error {
 	fake.initMutex.Lock()
 	ret, specificReturn := fake.initReturnsOnCall[len(fake.initArgsForCall)]
 	fake.initArgsForCall = append(fake.initArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.InitStub
+	fakeReturns := fake.initReturns
 	fake.recordInvocation("Init", []interface{}{arg1})
 	fake.initMutex.Unlock()
-	if fake.InitStub != nil {
-		return fake.InitStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.initReturns
 	return fakeReturns.result1
 }
 
@@ -366,15 +298,16 @@ func (fake *FakeGit) Merge(arg1 string, arg2 bool) error {
 		arg1 string
 		arg2 bool
 	}{arg1, arg2})
+	stub := fake.MergeStub
+	fakeReturns := fake.mergeReturns
 	fake.recordInvocation("Merge", []interface{}{arg1, arg2})
 	fake.mergeMutex.Unlock()
-	if fake.MergeStub != nil {
-		return fake.MergeStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.mergeReturns
 	return fakeReturns.result1
 }
 
@@ -430,15 +363,16 @@ func (fake *FakeGit) Pull(arg1 string, arg2 string, arg3 int, arg4 bool, arg5 bo
 		arg4 bool
 		arg5 bool
 	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.PullStub
+	fakeReturns := fake.pullReturns
 	fake.recordInvocation("Pull", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.pullMutex.Unlock()
-	if fake.PullStub != nil {
-		return fake.PullStub(arg1, arg2, arg3, arg4, arg5)
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.pullReturns
 	return fakeReturns.result1
 }
 
@@ -492,15 +426,16 @@ func (fake *FakeGit) Rebase(arg1 string, arg2 string, arg3 bool) error {
 		arg2 string
 		arg3 bool
 	}{arg1, arg2, arg3})
+	stub := fake.RebaseStub
+	fakeReturns := fake.rebaseReturns
 	fake.recordInvocation("Rebase", []interface{}{arg1, arg2, arg3})
 	fake.rebaseMutex.Unlock()
-	if fake.RebaseStub != nil {
-		return fake.RebaseStub(arg1, arg2, arg3)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.rebaseReturns
 	return fakeReturns.result1
 }
 
@@ -552,15 +487,16 @@ func (fake *FakeGit) RevParse(arg1 string) (string, error) {
 	fake.revParseArgsForCall = append(fake.revParseArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.RevParseStub
+	fakeReturns := fake.revParseReturns
 	fake.recordInvocation("RevParse", []interface{}{arg1})
 	fake.revParseMutex.Unlock()
-	if fake.RevParseStub != nil {
-		return fake.RevParseStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.revParseReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -616,8 +552,6 @@ func (fake *FakeGit) Invocations() map[string][][]interface{} {
 	defer fake.checkoutMutex.RUnlock()
 	fake.fetchMutex.RLock()
 	defer fake.fetchMutex.RUnlock()
-	fake.gitCryptUnlockMutex.RLock()
-	defer fake.gitCryptUnlockMutex.RUnlock()
 	fake.initMutex.RLock()
 	defer fake.initMutex.RUnlock()
 	fake.mergeMutex.RLock()

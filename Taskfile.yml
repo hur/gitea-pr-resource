@@ -2,7 +2,7 @@ version: '2'
 
 vars:
   BUILD_DIR: build
-  DOCKER_REPO: teliaoss/github-pr-resource
+  DOCKER_REPO: hur/gitea-pr-resource
 
 tasks:
   default:
@@ -14,7 +14,7 @@ tasks:
     cmds:
     - go generate ./...
     sources:
-    - github.go
+    - gitea.go
     - git.go
     generates:
     - fakes/*.go

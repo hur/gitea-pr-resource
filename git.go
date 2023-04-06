@@ -1,19 +1,18 @@
 package resource
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 // Git interface for testing purposes.
+//
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_git.go . Git
 type Git interface {
 	Init(string) error
@@ -23,17 +22,16 @@ type Git interface {
 	Checkout(string, string, bool) error
 	Merge(string, bool) error
 	Rebase(string, string, bool) error
-	GitCryptUnlock(string) error
 }
 
 // NewGitClient ...
 func NewGitClient(source *Source, dir string, output io.Writer) (*GitClient, error) {
-	if source.SkipSSLVerification {
-		os.Setenv("GIT_SSL_NO_VERIFY", "true")
-	}
-	if source.DisableGitLFS {
-		os.Setenv("GIT_LFS_SKIP_SMUDGE", "true")
-	}
+	//if source.SkipSSLVerification {
+	//	os.Setenv("GIT_SSL_NO_VERIFY", "true")
+	//}
+	//if source.DisableGitLFS {
+	//	os.Setenv("GIT_LFS_SKIP_SMUDGE", "true")
+	//}
 	return &GitClient{
 		AccessToken: source.AccessToken,
 		Directory:   dir,
@@ -74,11 +72,11 @@ func (g *GitClient) Init(branch string) error {
 	if err := g.command("git", "config", "user.email", "concourse@local").Run(); err != nil {
 		return fmt.Errorf("failed to configure git email: %s", err)
 	}
-	if err := g.command("git", "config", "url.https://x-oauth-basic@github.com/.insteadOf", "git@github.com:").Run(); err != nil {
-		return fmt.Errorf("failed to configure github url: %s", err)
+	if err := g.command("git", "config", "url.https://x-oauth-basic@git.atte.cloud/.insteadOf", "git@git.atte.cloud:").Run(); err != nil {
+		return fmt.Errorf("failed to configure gitea url: %s", err)
 	}
 	if err := g.command("git", "config", "url.https://.insteadOf", "git://").Run(); err != nil {
-		return fmt.Errorf("failed to configure github url: %s", err)
+		return fmt.Errorf("failed to configure gitea url: %s", err)
 	}
 	return nil
 }
@@ -201,27 +199,6 @@ func (g *GitClient) Rebase(baseRef string, headSha string, submodules bool) erro
 		}
 	}
 
-	return nil
-}
-
-// GitCryptUnlock unlocks the repository using git-crypt
-func (g *GitClient) GitCryptUnlock(base64key string) error {
-	keyDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary directory")
-	}
-	defer os.RemoveAll(keyDir)
-	decodedKey, err := base64.StdEncoding.DecodeString(base64key)
-	if err != nil {
-		return fmt.Errorf("failed to decode git-crypt key")
-	}
-	keyPath := filepath.Join(keyDir, "git-crypt-key")
-	if err := ioutil.WriteFile(keyPath, decodedKey, os.FileMode(0600)); err != nil {
-		return fmt.Errorf("failed to write git-crypt key to file: %s", err)
-	}
-	if err := g.command("git-crypt", "unlock", keyPath).Run(); err != nil {
-		return fmt.Errorf("git-crypt unlock failed: %s", err)
-	}
 	return nil
 }
 

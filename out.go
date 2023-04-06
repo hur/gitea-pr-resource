@@ -10,7 +10,7 @@ import (
 )
 
 // Put (business logic)
-func Put(request PutRequest, manager Github, inputDir string) (*PutResponse, error) {
+func Put(request PutRequest, manager Gitea, inputDir string) (*PutResponse, error) {
 	if err := request.Params.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid parameters: %s", err)
 	}
@@ -51,14 +51,6 @@ func Put(request PutRequest, manager Github, inputDir string) (*PutResponse, err
 
 		if err := manager.UpdateCommitStatus(version.Commit, p.BaseContext, safeExpandEnv(p.Context), p.Status, safeExpandEnv(p.TargetURL), description); err != nil {
 			return nil, fmt.Errorf("failed to set status: %s", err)
-		}
-	}
-
-	// Delete previous comments if specified
-	if request.Params.DeletePreviousComments {
-		err = manager.DeletePreviousComments(version.PR)
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete previous comments: %s", err)
 		}
 	}
 
@@ -105,16 +97,15 @@ type PutResponse struct {
 
 // PutParameters for the resource.
 type PutParameters struct {
-	Path                   string `json:"path"`
-	BaseContext            string `json:"base_context"`
-	Context                string `json:"context"`
-	TargetURL              string `json:"target_url"`
-	DescriptionFile        string `json:"description_file"`
-	Description            string `json:"description"`
-	Status                 string `json:"status"`
-	CommentFile            string `json:"comment_file"`
-	Comment                string `json:"comment"`
-	DeletePreviousComments bool   `json:"delete_previous_comments"`
+	Path            string `json:"path"`
+	BaseContext     string `json:"base_context"`
+	Context         string `json:"context"`
+	TargetURL       string `json:"target_url"`
+	DescriptionFile string `json:"description_file"`
+	Description     string `json:"description"`
+	Status          string `json:"status"`
+	CommentFile     string `json:"comment_file"`
+	Comment         string `json:"comment"`
 }
 
 // Validate the put parameters.

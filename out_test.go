@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shurcooL/githubv4"
+	"code.gitea.io/sdk/gitea"
+	resource "github.com/hur/gitea-pr-resource"
+	"github.com/hur/gitea-pr-resource/fakes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	resource "github.com/telia-oss/github-pr-resource"
-	"github.com/telia-oss/github-pr-resource/fakes"
 )
 
 func TestPut(t *testing.T) {
@@ -34,7 +34,7 @@ func TestPut(t *testing.T) {
 				CommittedDate: time.Time{},
 			},
 			parameters:  resource.PutParameters{},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -51,7 +51,7 @@ func TestPut(t *testing.T) {
 			parameters: resource.PutParameters{
 				Status: "success",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -69,7 +69,7 @@ func TestPut(t *testing.T) {
 				Status:  "failure",
 				Context: "build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -88,7 +88,7 @@ func TestPut(t *testing.T) {
 				BaseContext: "concourse-ci-custom",
 				Context:     "build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -106,7 +106,7 @@ func TestPut(t *testing.T) {
 				Status:    "failure",
 				TargetURL: "https://targeturl.com/concourse",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -124,7 +124,7 @@ func TestPut(t *testing.T) {
 				Status:      "failure",
 				Description: "Concourse CI build",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -141,31 +141,14 @@ func TestPut(t *testing.T) {
 			parameters: resource.PutParameters{
 				Comment: "comment",
 			},
-			pullRequest: createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
-		},
-
-		{
-			description: "we can delete previous comments made on the pull request",
-			source: resource.Source{
-				Repository:  "itsdalmo/test-repository",
-				AccessToken: "oauthtoken",
-			},
-			version: resource.Version{
-				PR:            "pr1",
-				Commit:        "commit1",
-				CommittedDate: time.Time{},
-			},
-			parameters: resource.PutParameters{
-				DeletePreviousComments: true,
-			},
-			pullRequest: createTestPR(1, "master", false, false, 0, []string{}, false, githubv4.PullRequestStateOpen),
+			pullRequest: createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			github := new(fakes.FakeGithub)
-			github.GetPullRequestReturns(tc.pullRequest, nil)
+			gitea := new(fakes.FakeGitea)
+			gitea.GetPullRequestReturns(tc.pullRequest, nil)
 
 			git := new(fakes.FakeGit)
 			git.RevParseReturns("sha", nil)
@@ -176,11 +159,11 @@ func TestPut(t *testing.T) {
 			// Run get so we have version and metadata for the put request
 			// (This is tested in in_test.go)
 			getInput := resource.GetRequest{Source: tc.source, Version: tc.version, Params: resource.GetParameters{}}
-			_, err := resource.Get(getInput, github, git, dir)
+			_, err := resource.Get(getInput, gitea, git, dir)
 			require.NoError(t, err)
 
 			putInput := resource.PutRequest{Source: tc.source, Params: tc.parameters}
-			output, err := resource.Put(putInput, github, dir)
+			output, err := resource.Put(putInput, gitea, dir)
 
 			// Validate output
 			if assert.NoError(t, err) {
@@ -189,8 +172,8 @@ func TestPut(t *testing.T) {
 
 			// Validate method calls put on Github.
 			if tc.parameters.Status != "" {
-				if assert.Equal(t, 1, github.UpdateCommitStatusCallCount()) {
-					commit, baseContext, context, status, targetURL, description := github.UpdateCommitStatusArgsForCall(0)
+				if assert.Equal(t, 1, gitea.UpdateCommitStatusCallCount()) {
+					commit, baseContext, context, status, targetURL, description := gitea.UpdateCommitStatusArgsForCall(0)
 					assert.Equal(t, tc.version.Commit, commit)
 					assert.Equal(t, tc.parameters.BaseContext, baseContext)
 					assert.Equal(t, tc.parameters.Context, context)
@@ -201,17 +184,10 @@ func TestPut(t *testing.T) {
 			}
 
 			if tc.parameters.Comment != "" {
-				if assert.Equal(t, 1, github.PostCommentCallCount()) {
-					pr, comment := github.PostCommentArgsForCall(0)
+				if assert.Equal(t, 1, gitea.PostCommentCallCount()) {
+					pr, comment := gitea.PostCommentArgsForCall(0)
 					assert.Equal(t, tc.version.PR, pr)
 					assert.Equal(t, tc.parameters.Comment, comment)
-				}
-			}
-
-			if tc.parameters.DeletePreviousComments {
-				if assert.Equal(t, 1, github.DeletePreviousCommentsCallCount()) {
-					pr := github.DeletePreviousCommentsArgsForCall(0)
-					assert.Equal(t, tc.version.PR, pr)
 				}
 			}
 		})
@@ -251,7 +227,7 @@ func TestVariableSubstitution(t *testing.T) {
 				Comment: fmt.Sprintf("$%s", variableName),
 			},
 			expectedComment: variableValue,
-			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:     createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -270,7 +246,7 @@ func TestVariableSubstitution(t *testing.T) {
 				TargetURL: fmt.Sprintf("%s$%s", variableURL, variableName),
 			},
 			expectedTargetURL: fmt.Sprintf("%s%s", variableURL, variableValue),
-			pullRequest:       createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:       createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 
 		{
@@ -288,14 +264,14 @@ func TestVariableSubstitution(t *testing.T) {
 				Comment: "$THIS_IS_NOT_SUBSTITUTED",
 			},
 			expectedComment: "$THIS_IS_NOT_SUBSTITUTED",
-			pullRequest:     createTestPR(1, "master", false, false, 0, nil, false, githubv4.PullRequestStateOpen),
+			pullRequest:     createTestPR(1, "master", false, false, nil, false, gitea.StateOpen),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			github := new(fakes.FakeGithub)
-			github.GetPullRequestReturns(tc.pullRequest, nil)
+			gitea := new(fakes.FakeGitea)
+			gitea.GetPullRequestReturns(tc.pullRequest, nil)
 
 			git := new(fakes.FakeGit)
 			git.RevParseReturns("sha", nil)
@@ -305,7 +281,7 @@ func TestVariableSubstitution(t *testing.T) {
 
 			// Run get so we have version and metadata for the put request
 			getInput := resource.GetRequest{Source: tc.source, Version: tc.version, Params: resource.GetParameters{}}
-			_, err := resource.Get(getInput, github, git, dir)
+			_, err := resource.Get(getInput, gitea, git, dir)
 			require.NoError(t, err)
 
 			oldValue := os.Getenv(variableName)
@@ -314,18 +290,18 @@ func TestVariableSubstitution(t *testing.T) {
 			os.Setenv(variableName, variableValue)
 
 			putInput := resource.PutRequest{Source: tc.source, Params: tc.parameters}
-			_, err = resource.Put(putInput, github, dir)
+			_, err = resource.Put(putInput, gitea, dir)
 
 			if tc.parameters.TargetURL != "" {
-				if assert.Equal(t, 1, github.UpdateCommitStatusCallCount()) {
-					_, _, _, _, targetURL, _ := github.UpdateCommitStatusArgsForCall(0)
+				if assert.Equal(t, 1, gitea.UpdateCommitStatusCallCount()) {
+					_, _, _, _, targetURL, _ := gitea.UpdateCommitStatusArgsForCall(0)
 					assert.Equal(t, tc.expectedTargetURL, targetURL)
 				}
 			}
 
 			if tc.parameters.Comment != "" {
-				if assert.Equal(t, 1, github.PostCommentCallCount()) {
-					_, comment := github.PostCommentArgsForCall(0)
+				if assert.Equal(t, 1, gitea.PostCommentCallCount()) {
+					_, comment := gitea.PostCommentArgsForCall(0)
 					assert.Equal(t, tc.expectedComment, comment)
 				}
 			}

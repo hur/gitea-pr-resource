@@ -9,49 +9,47 @@ import (
 	"strconv"
 )
 
-// Get (business logic)
-func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResponse, error) {
+func Get(request GetRequest, gitea Gitea, git Git, outputDir string) (*GetResponse, error) {
 	if request.Params.SkipDownload {
 		return &GetResponse{Version: request.Version}, nil
 	}
-
-	pull, err := github.GetPullRequest(request.Version.PR, request.Version.Commit)
+	pr, err := gitea.GetPullRequest(request.Version.PR, request.Version.Commit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve pull request: %s", err)
 	}
-
 	// Initialize and pull the base for the PR
-	if err := git.Init(pull.BaseRefName); err != nil {
+	if err := git.Init(pr.Base.Ref); err != nil {
 		return nil, err
 	}
-	if err := git.Pull(pull.Repository.URL, pull.BaseRefName, request.Params.GitDepth, request.Params.Submodules, request.Params.FetchTags); err != nil {
+	if err := git.Pull(pr.Base.Repository.CloneURL, pr.Base.Ref, request.Params.GitDepth, request.Params.Submodules, request.Params.FetchTags); err != nil {
 		return nil, err
 	}
 
 	// Get the last commit SHA in base for the metadata
-	baseSHA, err := git.RevParse(pull.BaseRefName)
+	baseSHA, err := git.RevParse(pr.Base.Ref)
 	if err != nil {
 		return nil, err
 	}
 
 	// Fetch the PR and merge the specified commit into the base
-	if err := git.Fetch(pull.Repository.URL, pull.Number, request.Params.GitDepth, request.Params.Submodules); err != nil {
+	//fmt.Printf("%v %v %v %v", pr.Head.Repository.CloneURL, int(pr.Index), request.Params.GitDepth, request.Params.Submodules)
+	if err := git.Fetch(pr.Head.Repository.CloneURL, int(pr.Index), request.Params.GitDepth, request.Params.Submodules); err != nil {
 		return nil, err
 	}
 
 	// Create the metadata
 	var metadata Metadata
-	metadata.Add("pr", strconv.Itoa(pull.Number))
-	metadata.Add("title", pull.Title)
-	metadata.Add("url", pull.URL)
-	metadata.Add("head_name", pull.HeadRefName)
-	metadata.Add("head_sha", pull.Tip.OID)
-	metadata.Add("base_name", pull.BaseRefName)
+	metadata.Add("pr", strconv.FormatInt(pr.Index, 10))
+	metadata.Add("title", pr.Title)
+	metadata.Add("url", pr.URL)
+	metadata.Add("head_name", pr.Head.Ref)
+	metadata.Add("head_sha", pr.Tip.SHA)
+	metadata.Add("base_name", pr.Base.Ref)
 	metadata.Add("base_sha", baseSHA)
-	metadata.Add("message", pull.Tip.Message)
-	metadata.Add("author", pull.Tip.Author.User.Login)
-	metadata.Add("author_email", pull.Tip.Author.Email)
-	metadata.Add("state", string(pull.State))
+	metadata.Add("message", pr.Tip.RepoCommit.Message)
+	metadata.Add("author", pr.Tip.RepoCommit.Author.Name) // pr.Tip.Author is nil if committer not matched to a Gitea user
+	metadata.Add("author_email", pr.Tip.RepoCommit.Author.Email)
+	metadata.Add("state", string(pr.State))
 
 	// Write version and metadata for reuse in PUT
 	path := filepath.Join(outputDir, ".git", "resource")
@@ -83,43 +81,19 @@ func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResp
 
 	switch tool := request.Params.IntegrationTool; tool {
 	case "rebase":
-		if err := git.Rebase(pull.BaseRefName, pull.Tip.OID, request.Params.Submodules); err != nil {
+		if err := git.Rebase(pr.Base.Ref, pr.Tip.SHA, request.Params.Submodules); err != nil {
 			return nil, err
 		}
 	case "merge", "":
-		if err := git.Merge(pull.Tip.OID, request.Params.Submodules); err != nil {
+		if err := git.Merge(pr.Tip.SHA, request.Params.Submodules); err != nil {
 			return nil, err
 		}
 	case "checkout":
-		if err := git.Checkout(pull.HeadRefName, pull.Tip.OID, request.Params.Submodules); err != nil {
+		if err := git.Checkout(pr.Head.Ref, pr.Tip.SHA, request.Params.Submodules); err != nil {
 			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("invalid integration tool specified: %s", tool)
-	}
-
-	if request.Source.GitCryptKey != "" {
-		if err := git.GitCryptUnlock(request.Source.GitCryptKey); err != nil {
-			return nil, err
-		}
-	}
-
-	if request.Params.ListChangedFiles {
-		cfol, err := github.GetChangedFiles(request.Version.PR, request.Version.Commit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch list of changed files: %s", err)
-		}
-
-		var fl []byte
-
-		for _, v := range cfol {
-			fl = append(fl, []byte(v.Path+"\n")...)
-		}
-
-		// Create List with changed files
-		if err := ioutil.WriteFile(filepath.Join(path, "changed_files"), fl, 0644); err != nil {
-			return nil, fmt.Errorf("failed to write file list: %s", err)
-		}
 	}
 
 	return &GetResponse{
@@ -130,12 +104,11 @@ func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResp
 
 // GetParameters ...
 type GetParameters struct {
-	SkipDownload     bool   `json:"skip_download"`
-	IntegrationTool  string `json:"integration_tool"`
-	GitDepth         int    `json:"git_depth"`
-	Submodules       bool   `json:"submodules"`
-	ListChangedFiles bool   `json:"list_changed_files"`
-	FetchTags        bool   `json:"fetch_tags"`
+	SkipDownload    bool   `json:"skip_download"`
+	IntegrationTool string `json:"integration_tool"`
+	GitDepth        int    `json:"git_depth"`
+	Submodules      bool   `json:"submodules"`
+	FetchTags       bool   `json:"fetch_tags"`
 }
 
 // GetRequest ...
