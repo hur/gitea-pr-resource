@@ -27,7 +27,7 @@ func (s *Source) Validate() error {
 	if s.Repository == "" {
 		return errors.New("repository must be set")
 	}
-	if s.Endpoint != "" {
+	if s.Endpoint == "" {
 		return errors.New("endpoint must be set")
 	}
 
