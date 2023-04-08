@@ -94,51 +94,54 @@ See https://concourse-ci.org/implementing-resource-types.html#resource-metadata 
 ```yaml
 resource_types:
 - name: pull-request
-  type: docker-image
+  type: registry-image
   source:
-    repository: teliaoss/github-pr-resource
+    repository: atteniemi/gitea-pr-resource
+    tag: latest
 
 resources:
 - name: pull-request
   type: pull-request
-  check_every: 24h
-  webhook_token: ((webhook-token))
+  #webhook_token: ((webhook-token))
   source:
-    repository: itsdalmo/test-repository
-    access_token: ((github-access-token))
+    repository: ops/blog
+    endpoint: https://git.atte.cloud 
+    access_token: ((gitea-access.token))
+    state: open
 
 jobs:
 - name: test
-  plan:
+  plan: 
   - get: pull-request
     trigger: true
     version: every
+    params:
+      submodules: true
   - put: pull-request
+    no_get: true # skip the implied get to not wipe out submodules
     params:
       path: pull-request
       status: pending
-  - task: unit-test
+  - task: test-build
     config:
       platform: linux
       image_resource:
-        type: docker-image
-        source: {repository: alpine/git, tag: "latest"}
+        type: registry-image
+        source:
+          repository: ghcr.io/getzola/zola
+          tag: v0.17.1
       inputs:
-        - name: pull-request
+      - name: pull-request
       run:
-        path: /bin/sh
-        args:
-          - -xce
-          - |
-            cd pull-request
-            git log --graph --all --color --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s" > log.txt
-            cat log.txt
+        path: zola
+        args: [-r, pull-request, build]
     on_failure:
       put: pull-request
       params:
         path: pull-request
         status: failure
   - put: pull-request
+    no_get: true  # skip the implied get
     params:
       path: pull-request
       status: success
