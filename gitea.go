@@ -14,6 +14,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -o fakes/fake_gitea.go . Gitea
 type Gitea interface {
 	ListPullRequests(gitea.StateType) ([]*PullRequest, error)
+	ListModifiedFiles(int64) ([]string, error)
 	PostComment(string, string) error
 	GetPullRequest(string, string) (*PullRequest, error)
 	UpdateCommitStatus(string, string, string, string, string, string) error
@@ -100,6 +101,58 @@ func (manager *GiteaClient) ListPullRequests(prStateFilter gitea.StateType) ([]*
 		page += 1
 	}
 	return response, nil
+}
+
+func (manager *GiteaClient) ListModifiedFiles(prNum int64) ([]string, error) {
+	var files []string
+
+	count := 0
+	totalCount := -1
+	page := 1
+	for {
+		changedFiles, httpresponse, err := manager.Client.ListPullRequestFiles(
+			manager.Owner,
+			manager.Repository,
+			prNum,
+			gitea.ListPullRequestFilesOptions{
+				ListOptions: gitea.ListOptions{
+					Page:     page,
+					PageSize: 100,
+				},
+			},
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to list changed files in pull request: %s", err)
+		}
+
+		for _, file := range changedFiles {
+			files = append(files, file.Filename)
+		}
+
+		count += len(changedFiles)
+
+		if page == 1 {
+			xTotalCount := httpresponse.Header.Get("x-total-count")
+			if xTotalCount == "" {
+				return nil, errors.New("missing x-total-count header in Gitea API response")
+			}
+
+			totalCount, err = strconv.Atoi(xTotalCount)
+			if err != nil {
+				return nil, errors.New("failed to parse x-total-count header in Gitea API response")
+			}
+
+		}
+
+		if count >= totalCount {
+			break
+		}
+
+		page += 1
+	}
+
+	return files, nil
 }
 
 func (manager *GiteaClient) GetPullRequest(prNumber, commitRef string) (*PullRequest, error) {

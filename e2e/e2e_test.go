@@ -64,6 +64,7 @@ func TestCheckE2E(t *testing.T) {
 				resource.Version{PR: latestPullRequestID, Commit: latestCommitID, CommittedDate: latestDateTime, State: gitea.StateOpen},
 			},
 		},
+
 		{
 			description: "check returns all new versions since the last",
 			source: resource.Source{
@@ -76,6 +77,34 @@ func TestCheckE2E(t *testing.T) {
 				resource.Version{PR: latestPullRequestID, Commit: latestCommitID, CommittedDate: latestDateTime, State: gitea.StateOpen},
 			},
 		},
+		{
+			description: "check will only return versions that match the specified paths",
+			source: resource.Source{
+				Repository:  "atte/e2e-test-repository",
+				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
+				Endpoint:    endpointURL,
+				Paths:       []string{"*.md"},
+			},
+			version: resource.Version{State: gitea.StateOpen},
+			expected: resource.CheckResponse{
+				resource.Version{PR: targetPullRequestID, Commit: targetCommitID, CommittedDate: targetDateTime, State: gitea.StateOpen},
+			},
+		},
+
+		{
+			description: "check will skip versions which only match the ignore paths",
+			source: resource.Source{
+				Repository:  "atte/e2e-test-repository",
+				AccessToken: os.Getenv("GITEA_ACCESS_TOKEN"),
+				Endpoint:    endpointURL,
+				IgnorePaths: []string{"*.txt"},
+			},
+			version: resource.Version{State: gitea.StateOpen},
+			expected: resource.CheckResponse{
+				resource.Version{PR: targetPullRequestID, Commit: targetCommitID, CommittedDate: targetDateTime, State: gitea.StateOpen},
+			},
+		},
+
 		{
 			description: "check works with custom base branch",
 			source: resource.Source{

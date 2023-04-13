@@ -14,6 +14,8 @@ type Source struct {
 	Repository    string          `json:"repository"`
 	Endpoint      string          `json:"endpoint"`
 	AccessToken   string          `json:"access_token"`
+	Paths         []string        `json:"paths"`
+	IgnorePaths   []string        `json:"ignore_paths"`
 	State         gitea.StateType `json:"state"`
 	DisableCISkip bool            `json:"disable_ci_skip"`
 	BaseBranch    string          `json:"base_branch"`
