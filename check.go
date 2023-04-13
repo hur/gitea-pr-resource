@@ -1,8 +1,11 @@
 package resource
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 type CheckRequest struct {
@@ -66,6 +69,46 @@ Loop:
 			}
 		}
 
+		// Fetch files once if paths/ignore_paths are specified.
+		var files []string
+
+		if len(request.Source.Paths) > 0 || len(request.Source.IgnorePaths) > 0 {
+			files, err = manager.ListModifiedFiles(pr.Index)
+			fmt.Printf("%s", files)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list modified files: %s", err)
+			}
+		}
+
+		// Skip version if no files match the specified paths.
+		if len(request.Source.Paths) > 0 {
+			var wanted []string
+			for _, pattern := range request.Source.Paths {
+				w, err := FilterPath(files, pattern)
+				if err != nil {
+					return nil, fmt.Errorf("path match failed: %s", err)
+				}
+				wanted = append(wanted, w...)
+			}
+			if len(wanted) == 0 {
+				continue Loop
+			}
+		}
+
+		// Skip version if all files are ignored.
+		if len(request.Source.IgnorePaths) > 0 {
+			wanted := files
+			for _, pattern := range request.Source.IgnorePaths {
+				wanted, err = FilterIgnorePath(wanted, pattern)
+				if err != nil {
+					return nil, fmt.Errorf("ignore path match failed: %s", err)
+				}
+			}
+			if len(wanted) == 0 {
+				continue Loop
+			}
+		}
+
 		response = append(response, NewVersion(pr))
 	}
 
@@ -86,4 +129,51 @@ Loop:
 func ContainsSkipCI(s string) bool {
 	re := regexp.MustCompile("(?i)\\[(ci skip|skip ci|no ci)\\]")
 	return re.MatchString(s)
+}
+
+func FilterIgnorePath(files []string, pattern string) ([]string, error) {
+	var out []string
+	for _, file := range files {
+		match, err := filepath.Match(pattern, file)
+		if err != nil {
+			return nil, err
+		}
+		if !match && !IsInsidePath(pattern, file) {
+			out = append(out, file)
+		}
+	}
+	return out, nil
+}
+
+func FilterPath(files []string, pattern string) ([]string, error) {
+	var out []string
+	for _, file := range files {
+		match, err := filepath.Match(pattern, file)
+		if err != nil {
+			return nil, err
+		}
+		if match || IsInsidePath(pattern, file) {
+			out = append(out, file)
+		}
+	}
+	return out, nil
+}
+
+// IsInsidePath checks whether the child path is inside the parent path.
+//
+// /foo/bar is inside /foo, but /foobar is not inside /foo.
+// /foo is inside /foo, but /foo is not inside /foo/
+func IsInsidePath(parent, child string) bool {
+	if parent == child {
+		return true
+	}
+
+	// we add a trailing slash so that we only get prefix matches on a
+	// directory separator
+	parentWithTrailingSlash := parent
+	if !strings.HasSuffix(parentWithTrailingSlash, string(filepath.Separator)) {
+		parentWithTrailingSlash += string(filepath.Separator)
+	}
+
+	return strings.HasPrefix(child, parentWithTrailingSlash)
 }

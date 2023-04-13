@@ -23,6 +23,19 @@ type FakeGitea struct {
 		result1 *resource.PullRequest
 		result2 error
 	}
+	ListModifiedFilesStub        func(int64) ([]string, error)
+	listModifiedFilesMutex       sync.RWMutex
+	listModifiedFilesArgsForCall []struct {
+		arg1 int64
+	}
+	listModifiedFilesReturns struct {
+		result1 []string
+		result2 error
+	}
+	listModifiedFilesReturnsOnCall map[int]struct {
+		result1 []string
+		result2 error
+	}
 	ListPullRequestsStub        func(gitea.StateType) ([]*resource.PullRequest, error)
 	listPullRequestsMutex       sync.RWMutex
 	listPullRequestsArgsForCall []struct {
@@ -129,6 +142,70 @@ func (fake *FakeGitea) GetPullRequestReturnsOnCall(i int, result1 *resource.Pull
 	}
 	fake.getPullRequestReturnsOnCall[i] = struct {
 		result1 *resource.PullRequest
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeGitea) ListModifiedFiles(arg1 int64) ([]string, error) {
+	fake.listModifiedFilesMutex.Lock()
+	ret, specificReturn := fake.listModifiedFilesReturnsOnCall[len(fake.listModifiedFilesArgsForCall)]
+	fake.listModifiedFilesArgsForCall = append(fake.listModifiedFilesArgsForCall, struct {
+		arg1 int64
+	}{arg1})
+	stub := fake.ListModifiedFilesStub
+	fakeReturns := fake.listModifiedFilesReturns
+	fake.recordInvocation("ListModifiedFiles", []interface{}{arg1})
+	fake.listModifiedFilesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeGitea) ListModifiedFilesCallCount() int {
+	fake.listModifiedFilesMutex.RLock()
+	defer fake.listModifiedFilesMutex.RUnlock()
+	return len(fake.listModifiedFilesArgsForCall)
+}
+
+func (fake *FakeGitea) ListModifiedFilesCalls(stub func(int64) ([]string, error)) {
+	fake.listModifiedFilesMutex.Lock()
+	defer fake.listModifiedFilesMutex.Unlock()
+	fake.ListModifiedFilesStub = stub
+}
+
+func (fake *FakeGitea) ListModifiedFilesArgsForCall(i int) int64 {
+	fake.listModifiedFilesMutex.RLock()
+	defer fake.listModifiedFilesMutex.RUnlock()
+	argsForCall := fake.listModifiedFilesArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeGitea) ListModifiedFilesReturns(result1 []string, result2 error) {
+	fake.listModifiedFilesMutex.Lock()
+	defer fake.listModifiedFilesMutex.Unlock()
+	fake.ListModifiedFilesStub = nil
+	fake.listModifiedFilesReturns = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeGitea) ListModifiedFilesReturnsOnCall(i int, result1 []string, result2 error) {
+	fake.listModifiedFilesMutex.Lock()
+	defer fake.listModifiedFilesMutex.Unlock()
+	fake.ListModifiedFilesStub = nil
+	if fake.listModifiedFilesReturnsOnCall == nil {
+		fake.listModifiedFilesReturnsOnCall = make(map[int]struct {
+			result1 []string
+			result2 error
+		})
+	}
+	fake.listModifiedFilesReturnsOnCall[i] = struct {
+		result1 []string
 		result2 error
 	}{result1, result2}
 }
@@ -330,6 +407,8 @@ func (fake *FakeGitea) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.getPullRequestMutex.RLock()
 	defer fake.getPullRequestMutex.RUnlock()
+	fake.listModifiedFilesMutex.RLock()
+	defer fake.listModifiedFilesMutex.RUnlock()
 	fake.listPullRequestsMutex.RLock()
 	defer fake.listPullRequestsMutex.RUnlock()
 	fake.postCommentMutex.RLock()
